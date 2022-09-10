@@ -77,6 +77,14 @@ func GetHeight() uint64 {
 	return height.Height
 }
 
+func GetInfo() *daemon.GetInfoResult {
+	info, err := client.GetInfo(bgCtx)
+	if err != nil {
+		panic(err)
+	}
+	return info
+}
+
 func GetRecentBlocks() *daemon.GetBlockHeadersRangeResult {
 	height := GetHeight()
 	r, err := client.GetBlockHeadersRange(bgCtx, height-51, height-1)

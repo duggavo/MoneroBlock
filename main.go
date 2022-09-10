@@ -41,7 +41,10 @@ import (
 	"github.com/cirocosta/go-monero/pkg/rpc/daemon"
 )
 
-const Version string = "0.1.0"
+const Version string = "0.1.1"
+
+// Monero network settings
+const BlockTime int = 120
 
 var listenAddress, ProxyToUse, DaemonUrl string
 
@@ -58,8 +61,12 @@ func main() {
 
 	flag.StringVar(&listenAddress, "bind", "127.0.0.1:31312", "Address and port to bind.")
 	flag.StringVar(&ProxyToUse, "proxy", "none", "Proxy to use. Should start with socks5://, socks4:// or http:// .") // socks5://127.0.0.1:9050
-	flag.StringVar(&DaemonUrl, "daemon", "http://127.0.0.1:18081", "The Monero daemon URL. Please note that using a third-party daemon might harm privacy if you do not use a proxy.")
+	flag.StringVar(&DaemonUrl, "daemon", "127.0.0.1:18081", "The Monero daemon URL. Please note that using a third-party daemon might harm privacy if you do not use a proxy.")
 	flag.Parse()
+
+	if !strings.HasPrefix(DaemonUrl, "http://") {
+		DaemonUrl = "http://" + DaemonUrl
+	}
 
 	InitPages()
 	StartDaemonRpc()
@@ -75,8 +82,16 @@ func main() {
 			CheckString(e.Hash)
 			blocksList = "<tr class=\"tr\"><td>" + strconv.FormatUint(e.Height, 10) + "</td><td>" + strconv.FormatUint(uint64(e.NumTxes), 10) + "</td><td><a class=\"monos\" href=\"/block?id=" + e.Hash + "\">" + e.Hash + "</a></td><td>" + FormatTimeAgo(time.Now().Unix()-e.Timestamp) + "</td></tr>" + blocksList
 		}
+
+		info := GetInfo()
+		pageOut := strings.Replace(MainPage, "$blocks", blocksList, 1)
+
+		pageOut = strings.Replace(pageOut, "$diff", strconv.FormatUint(info.Difficulty/1000/1000, 10)+" M", 1)
+		pageOut = strings.Replace(pageOut, "$txnr", strconv.FormatUint(info.TxCount/1000, 10)+"k", 1)
+		pageOut = strings.Replace(pageOut, "$hashrate", strconv.FormatUint(info.Difficulty/1000/1000/uint64(BlockTime), 10)+" MH/s", 1)
+
 		res.Header().Set("Content-Type", "text/html")
-		res.Write([]byte(strings.Replace(MainPage, "$blocks", blocksList, 1)))
+		res.Write([]byte(pageOut))
 	})
 	http.HandleFunc("/search", func(res http.ResponseWriter, req *http.Request) {
 		sParams := req.URL.Query()["q"]
