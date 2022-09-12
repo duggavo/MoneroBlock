@@ -3,7 +3,7 @@ LABEL author="seth@sethforprivacy.com" \
       maintainer="seth@sethforprivacy.com"
 
 # Set MoneroBlock branch or tag to build
-ARG MONERO_BLOCK_BRANCH=main
+ARG MONERO_BLOCK_BRANCH=v0.1.1
 
 # Set the proper HEAD commit hash for the given branch/tag in MONERO_BLOCK_BRANCH
 ARG MONERO_BLOCK_COMMIT_HASH=de08fa10be7706c66f2374baa4d2bafc61fbe49e
