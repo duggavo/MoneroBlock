@@ -39,6 +39,7 @@ import (
 
 	"github.com/cirocosta/go-monero/pkg/rpc"
 	"github.com/cirocosta/go-monero/pkg/rpc/daemon"
+	"github.com/gabstv/httpdigest"
 )
 
 var client *daemon.Client
@@ -52,12 +53,19 @@ func StartDaemonRpc() {
 		rpc_client, err = rpc.NewClient(DaemonUrl)
 
 	} else {
+		if RpcLogin != "none" {
+			panic("rpc-login is incompatible with proxy.")
+		}
 		url_proxy, _ := url.Parse(ProxyToUse)
-
 		transport := http.Transport{}
 		transport.Proxy = http.ProxyURL(url_proxy)
 		http_proxy_client := &http.Client{Transport: &transport}
 
+		rpc_client, err = rpc.NewClient(DaemonUrl, rpc.WithHTTPClient(http_proxy_client))
+	}
+	if RpcLogin != "none" {
+		transport := httpdigest.New(RpcUsername, RpcPassword).Transport
+		http_proxy_client := &http.Client{Transport: transport}
 		rpc_client, err = rpc.NewClient(DaemonUrl, rpc.WithHTTPClient(http_proxy_client))
 
 	}
