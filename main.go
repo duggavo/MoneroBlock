@@ -41,12 +41,14 @@ import (
 	"github.com/cirocosta/go-monero/pkg/rpc/daemon"
 )
 
-const Version string = "0.1.1"
+const Version string = "0.1.2"
 
 // Monero network settings
 const BlockTime int = 120
 
-var listenAddress, ProxyToUse, DaemonUrl string
+var listenAddress, ProxyToUse, DaemonUrl, RpcLogin string
+
+var RpcPassword, RpcUsername string
 
 func main() {
 	fmt.Println("\x1b[1m" + `
@@ -60,9 +62,21 @@ func main() {
 	fmt.Println("\n\nStarting MoneroBlock v" + Version)
 
 	flag.StringVar(&listenAddress, "bind", "127.0.0.1:31312", "Address and port to bind.")
-	flag.StringVar(&ProxyToUse, "proxy", "none", "Proxy to use. Should start with socks5://, socks4:// or http:// .") // socks5://127.0.0.1:9050
+	flag.StringVar(&ProxyToUse, "proxy", "none", "Proxy to use. Should start with socks5://, socks4:// or http:// .")
+	flag.StringVar(&RpcLogin, "rpc-login", "none", "Required if daemon has login enabled.")
 	flag.StringVar(&DaemonUrl, "daemon", "127.0.0.1:18081", "The Monero daemon URL. Please note that using a third-party daemon might harm privacy if you do not use a proxy.")
 	flag.Parse()
+
+	if RpcLogin != "none" {
+		splLogin := strings.Split(RpcLogin, ":")
+		if len(splLogin) < 2 {
+			fmt.Println("rpc-login flag is not valid. Ignoring it.")
+			RpcLogin = "none"
+		} else {
+			RpcPassword = splLogin[0]
+			RpcUsername = splLogin[1]
+		}
+	}
 
 	if !strings.HasPrefix(DaemonUrl, "http://") {
 		DaemonUrl = "http://" + DaemonUrl
@@ -143,7 +157,7 @@ func main() {
 		o := strings.Replace(TxPage, "$confirmations", confirmations, 1)
 		height := strconv.FormatUint(txData.BlockHeight, 10)
 		o = strings.Replace(o, "$height", height, 2)
-		txSize := strconv.FormatFloat(float64(len(txData.AsHex))/2/100, 'f', 2, 64)
+		txSize := strconv.FormatFloat(float64(len(txData.AsHex))/2/1000, 'f', 2, 64)
 		o = strings.Replace(o, "$size", txSize, 1)
 		o = strings.Replace(o, "$txid", txData.TxHash, 1)
 
